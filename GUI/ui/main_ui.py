@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QStackedWidget, QMessageBox
-from layouts import EnvironmentWidget, SecurityWidget, SettingsWidget
+from ui.layouts import EnvironmentWidget, SecurityWidget, SettingsWidget
 
 class MainWindow(QWidget):
     def __init__(self):

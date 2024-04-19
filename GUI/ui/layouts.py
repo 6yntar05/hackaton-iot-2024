@@ -1,4 +1,3 @@
-import time
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit 
 import datetime
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
@@ -87,7 +86,9 @@ class SecurityWidget(QWidget):
         
         self.secrity_indef.setText(indef_text)
         self.secrity_session.setText(session_text)
+        
         self.secrity_log_text.setText(log)
+        self.secrity_log.setReadOnly(True)
         self.secrity_log.placeholderText()
 
 class SettingsWidget(QWidget):
