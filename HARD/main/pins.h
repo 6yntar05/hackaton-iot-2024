@@ -1,34 +1,27 @@
 #pragma once
 
-#define GENERIC_LED 13
+#define GENERIC_LED PC13
 
 // SD
-#define SD_CS PB0
-#define SD_STK PB0
-#define SD_MOSI PB0
-#define SD_MISO PB0
+#define SD_CS PB8
 
 // LAMP
-#define LAMP_DATA PB0
+#define LAMP_DATA PA0
 
-// Wifi
-#define NRF_CS PB0
-#define NRF_STK PB0
-#define NRF_MOSI PB0
-#define NRF_MISO PB0
+// NRF
+#define NRF_CE PB2
+#define NRF_CSN PB15
 
 // RFID (spi) (можно ещё и i2c)
-#define RFID_CS PB0
-#define RFID_STK PB0
-#define RFID_MOSI PB0
-#define RFID_MISO PB0
+#define RFID_RST PB5
+#define RFID_SS PB14 // C!
 
 // Analog
-#define ENC_VOLUME PB0
-#define POT_BRIGHT PB0
-#define BUT_1 PB0
-#define BUT_2 PB0
-#define SWC_1 PB0
-#define SWC_2 PB0
-#define BEEP PB0
-
+#define ENC_A PB12
+#define ENC_B PB15
+#define ENC_C PB13
+#define POT_BRIGHT PB1
+#define BUTTON PB4
+#define SWC_1 PC15
+#define SWC_2 PC14 // C!
+#define BEEP PA8

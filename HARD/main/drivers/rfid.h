@@ -8,10 +8,7 @@
 
 namespace RFID {
 
-#define RST_PIN  9 // RES pin
-#define SS_PIN  10 // SDA (SS) pin
-
-MFRC522 mfrc522(SS_PIN, RST_PIN); // создание объекта mfrc522
+MFRC522 mfrc522(RFID_SS, RFID_RST); // создание объекта mfrc522
 
 inline void initRFID() {
     mfrc522.PCD_Init();
@@ -23,15 +20,16 @@ inline void initRFID() {
 inline String getPoint() {
     // сброс цикла, если на считывателе нет карты
     if ( ! mfrc522.PICC_IsNewCardPresent()) {
-        return;
+        return "ERR";
     }
 
     if ( ! mfrc522.PICC_ReadCardSerial()) {
-        return;
+        return "ERR";
     }
 
     // вывод информации о карте на монитор порта
     mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
+    digitalWrite(GENERIC_LED, HIGH);
     return "FFFFFF";
 }
 
