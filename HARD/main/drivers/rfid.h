@@ -18,19 +18,19 @@ inline void initRFID() {
 }
 
 inline String getPoint() {
-    // сброс цикла, если на считывателе нет карты
-    if ( ! mfrc522.PICC_IsNewCardPresent()) {
-        return "ERR";
+    if ( mfrc522.PICC_IsNewCardPresent() ) {
+        mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid));
+        mfrc522.PICC_HaltA();
+        String buffer = "1A737580"; // Temporary
+        for (size_t i = 0; i < mfrc522.uid.size; i++){
+            buffer += static_cast<char>(mfrc522.uid.uidByte[i]);
+        }
+        return buffer;
     }
-
     if ( ! mfrc522.PICC_ReadCardSerial()) {
-        return "ERR";
+        digitalWrite(GENERIC_LED, LOW);
+        return "NO";
     }
-
-    // вывод информации о карте на монитор порта
-    mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
-    digitalWrite(GENERIC_LED, HIGH);
-    return "FFFFFF";
 }
 
 }

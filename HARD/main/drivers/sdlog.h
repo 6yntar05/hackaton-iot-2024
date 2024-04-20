@@ -2,11 +2,11 @@
 
 #include "../pins.h"
 
-#include <STM32SD.h>
-
+#include <string.h>
 #include <SPI.h>
+#include <SD.h>
 
-namespace SD {
+namespace SDLog {
 
 void initSd() {
     pinMode(SD_CS, OUTPUT);
@@ -18,15 +18,12 @@ void initSd() {
     Serial.println("initialization done.");
 }
 
-void logSd() {
-    myFile = SD.open("test.txt", FILE_WRITE);
+void logSd(const String& text) {
+    auto myFile = SD.open("WorkSE.txt", FILE_WRITE);
 
     if (myFile) {
-        Serial.print("Writing to test.txt...");
-        myFile.println("testing 1, 2, 3.");
-        // close the file:
+        myFile.println(text);
         myFile.close();
-        Serial.println("done.");
     } else {
         // if the file didn't open, print an error:
         Serial.println("error opening test.txt");

@@ -85,20 +85,31 @@ class SecurityWidget(QWidget):
         self.security()
 
     def onRead(self):
-        rx = serial.readLine() # TODO Буффер пробуем через while 
-        rxs = str(rx)
+        while (serial.bytesAvailable()):
+            rx = serial.readLine()
+            rxs = str(rx)
 
-        lines = rxs.split('\\r\\n')
-        for line in lines:
-            parts = line.split(':')
-            if len(parts) == 2:
-                key = parts[0].strip() 
-                value = parts[1].strip()  
-                print(f'{key}: {value}')
-                if key == "b'RFID":
-                    self.security_log.appendPlainText(f"RFID:{value}")
-                    indef_text = f"<div align='center' style='font-size: 20px;'>Индефитикатор: {value}</div>" 
-                    self.security_indef.setText(indef_text)
+            lines = rxs.split('\\r\\n')
+            for line in lines:
+                parts = line.split(':')
+                if len(parts) == 2:
+                    key = parts[0].strip() 
+                    value = parts[1].strip()  
+                    print(f'{key}: {value}')
+                    if key == "b'RFID":
+                        self.security_log.appendPlainText(f"RFID:{value}")
+                        indef_text = f"<div align='center' style='font-size: 20px;'>Индефитикатор: {value}</div>" 
+                        self.security_indef.setText(indef_text)
+                    elif key == "b'MEDIA":
+                        self.security_log.appendPlainText(f"MEDIA:{value}")
+                    elif key == "b'VOLUME":
+                        self.security_log.appendPlainText(f"VOLUME:{value}")
+                    elif key == "b'BRIGHT":
+                        self.security_log.appendPlainText(f"BRIGHT:{value}")
+                    elif key == "b'TIME":
+                        self.security_log.appendPlainText(f"TIME:{value}")
+                    elif key == "b'LAMP":
+                        self.security_log.appendPlainText(f"LAMP:{value}")
 
     def security(self):
         self.security_log_text.setText("Логи")
