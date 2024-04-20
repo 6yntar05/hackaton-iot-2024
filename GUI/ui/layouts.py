@@ -1,13 +1,15 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton
+import os
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton, QCheckBox
 import datetime
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtCore import QIODevice
+import sys
 
 
 serial = QSerialPort()
 serialinfo = QSerialPortInfo()
-serial.setBaudRate(9600)
-#serial.open()
+serial.setBaudRate(115200)
+
 
 print(F"INFO: {str(serial.portName)}")
 portList = []
@@ -69,49 +71,41 @@ class SecurityWidget(QWidget):
     def initUI(self):
         layout = QVBoxLayout()
         
-        self.secrity_indef = QLabel()
-        layout.addWidget(self.secrity_indef)
-
-        self.secrity_session = QLabel()
-        layout.addWidget(self.secrity_session)
+        self.security_indef = QLabel()
+        layout.addWidget(self.security_indef)
         
-        #TODO Подумать как делать вывод логов
-        self.secrity_log = QPlainTextEdit()
-        self.secrity_log_text = QLabel()
-        layout.addWidget(self.secrity_log_text)
-        layout.addWidget(self.secrity_log)
+        self.security_log_text = QLabel("Логи")
+        layout.addWidget(self.security_log_text)
         
-        self.secrity()
+        self.security_log = QPlainTextEdit()
+        layout.addWidget(self.security_log)
 
         self.setLayout(layout)
-    
+
+        self.security()
+
     def onRead(self):
-        rx = serial.readLine()
+        rx = serial.readLine() # TODO Буффер пробуем через while 
         rxs = str(rx)
-        rxs.encode().strip()
-        print(rxs)
-        #self.secrity_log.appendPlainText(rxs)
 
-    def secrity(self):
-        indef = "FFFFFFF" #TODO Получать индефитикатор
-        session = "13:05" #TODO Получать текущию сессию
-        log = "Log"
-        
-        indef_text = f"<div align='center' style='font-size: 20px;'>Индефитикатор: {indef}</div>"
-        session_text = f"<div align='center' style='font-size: 20px;'>Текущая сессия: {session}</div>"
-        
-        
-        self.secrity_indef.setText(indef_text)
-        self.secrity_session.setText(session_text)
+        lines = rxs.split('\\r\\n')
+        for line in lines:
+            parts = line.split(':')
+            if len(parts) == 2:
+                key = parts[0].strip() 
+                value = parts[1].strip()  
+                print(f'{key}: {value}')
+                if key == "b'RFID":
+                    self.security_log.appendPlainText(f"RFID:{value}")
+                    indef_text = f"<div align='center' style='font-size: 20px;'>Индефитикатор: {value}</div>" 
+                    self.security_indef.setText(indef_text)
+
+    def security(self):
+        self.security_log_text.setText("Логи")
+        self.security_log.setReadOnly(True)
+        serial.readyRead.connect(self.onRead)  
 
 
-
-
-        
-        self.secrity_log_text.setText(log)
-        self.secrity_log.setReadOnly(True)
-        serial.readyRead.connect(self.onRead)
-    
 
 class SettingsWidget(QWidget):
     def __init__(self):
@@ -133,8 +127,12 @@ class SettingsWidget(QWidget):
         self.disconnect_button.setEnabled(False) 
         layout.addWidget(self.disconnect_button)
 
+
         self.ap = QLabel()
         layout.addWidget(self.ap)
+
+        self.autorun = QCheckBox("Автозагрузка")
+        layout.addWidget(self.autorun)
 
         self.settings()
         self.setLayout(layout)
@@ -142,11 +140,19 @@ class SettingsWidget(QWidget):
     def settings(self):
         self.ports.addItems(portList)
         self.ports.currentIndexChanged.connect(self.update_selected_port_info)
+        self.autorun.stateChanged.connect(self.copy_to_run)
 
     def update_selected_port_info(self):
         selected_port = self.ports.currentText()
         port_info_text = f"<div align='center' style='font-size: 20px;'>Выбран порт: {selected_port}</div>"
         self.ap.setText(port_info_text)
+    
+    def copy_to_run(self):
+        if self.autorun.isChecked():
+            file_path = sys.argv[0]
+            file_name = file_path.split('\\')[-1]
+            path = '%userprofile%\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\'
+            os.system(f'copy "{file_path}" "{path}{file_name}"')   
 
     def connect_to_port(self):
         selected_port = self.ports.currentText()
