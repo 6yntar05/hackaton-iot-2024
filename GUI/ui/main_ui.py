@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QStackedWidget, QMessageBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QStackedWidget, QMessageBox, QSpacerItem, QSizePolicy
 from ui.layouts import EnvironmentWidget, SecurityWidget, SettingsWidget
 
 class MainWindow(QWidget):
@@ -14,24 +14,33 @@ class MainWindow(QWidget):
         buttons_layout = QVBoxLayout()
 
         # Создаем кнопки для переключения между виджетами
-        self.btn_environment = QPushButton("Окружение")
+        self.btn_environment = QPushButton("🖥️ Окружение")
         self.btn_environment.setDisabled(True)
         self.btn_environment.clicked.connect(self.show_environment)
+        #self.btn_environment.setStyleSheet("text-align: left; padding-left: 20px;")
         buttons_layout.addWidget(self.btn_environment)
 
-        self.btn_security = QPushButton("Безопасность")
+        self.btn_security = QPushButton("🛡️ Безопасность")
         self.btn_security.clicked.connect(self.show_security)
+        #self.btn_security.setStyleSheet("text-align: left; padding-left: 20px;")
         buttons_layout.addWidget(self.btn_security)
 
-        self.btn_settings = QPushButton("Настройки")
+        self.btn_settings = QPushButton("⚙️ Настройки")
         self.btn_settings.clicked.connect(self.show_settings)
+        #self.btn_settings.setStyleSheet("text-align: left; padding-left: 20px;")
         buttons_layout.addWidget(self.btn_settings)
         
+        # Растягиваемый разделитель между настройками и информацией
+        spacer_item = QSpacerItem(0, 500, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        buttons_layout.addItem(spacer_item)
         
-        self.btn_info = QPushButton("Информация")
+        self.btn_info = QPushButton("🗒️ Информация")
         self.btn_info.clicked.connect(self.show_info)
+        #self.btn_info.setStyleSheet("text-align: left; padding-left: 20px;")
         buttons_layout.addWidget(self.btn_info)
 
+        # Растягиваем кнопки по всей доступной ширине
+        buttons_layout.addStretch(1)
 
         layout.addLayout(buttons_layout)
 
@@ -71,11 +80,8 @@ class MainWindow(QWidget):
         mbox = QMessageBox()
         mbox.setWindowTitle("Информация")
         mbox.setText("""
-Создатели чудо-проги:
-Толкачев Станислав - 6yntar05
-Малков Антон - Sodx1
-Лев Асманов 
-Наше правило: btw i use arch 
+Aarch: WorkSE App
+Version 0.1v
 """)
         mbox.setStandardButtons(QMessageBox.Ok)
         mbox.exec_()
