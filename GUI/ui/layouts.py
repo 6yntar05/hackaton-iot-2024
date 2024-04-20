@@ -1,15 +1,26 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit 
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton
 import datetime
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
+from PyQt5.QtCore import QIODevice
 
 
 serial = QSerialPort()
-serial.setBaudRate(115200)
+serialinfo = QSerialPortInfo()
+serial.setBaudRate(9600)
+#serial.open()
+
+print(F"INFO: {str(serial.portName)}")
+portList = []
+ports = QSerialPortInfo().availablePorts()
+for port in ports:
+    portList.append(port.portName())
+print(portList)
+
+
 
 class EnvironmentWidget(QWidget):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
@@ -53,7 +64,6 @@ class EnvironmentWidget(QWidget):
 class SecurityWidget(QWidget):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
@@ -61,7 +71,7 @@ class SecurityWidget(QWidget):
         
         self.secrity_indef = QLabel()
         layout.addWidget(self.secrity_indef)
-        
+
         self.secrity_session = QLabel()
         layout.addWidget(self.secrity_session)
         
@@ -74,7 +84,14 @@ class SecurityWidget(QWidget):
         self.secrity()
 
         self.setLayout(layout)
-        
+    
+    def onRead(self):
+        rx = serial.readLine()
+        rxs = str(rx)
+        rxs.encode().strip()
+        print(rxs)
+        #self.secrity_log.appendPlainText(rxs)
+
     def secrity(self):
         indef = "FFFFFFF" #TODO Получать индефитикатор
         session = "13:05" #TODO Получать текущию сессию
@@ -86,18 +103,75 @@ class SecurityWidget(QWidget):
         
         self.secrity_indef.setText(indef_text)
         self.secrity_session.setText(session_text)
+
+
+
+
         
         self.secrity_log_text.setText(log)
         self.secrity_log.setReadOnly(True)
-        self.secrity_log.placeholderText()
+        serial.readyRead.connect(self.onRead)
+    
 
 class SettingsWidget(QWidget):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
 
+        self.ports = QComboBox()
+        layout.addWidget(self.ports)
+
+        self.connect_button = QPushButton("Connect")
+        self.connect_button.clicked.connect(self.connect_to_port)
+        layout.addWidget(self.connect_button)
+
+        self.disconnect_button = QPushButton("Disconnect")
+        self.disconnect_button.clicked.connect(self.disconnect_from_port)
+        self.disconnect_button.setEnabled(False) 
+        layout.addWidget(self.disconnect_button)
+
+        self.ap = QLabel()
+        layout.addWidget(self.ap)
+
+        self.settings()
         self.setLayout(layout)
+
+    def settings(self):
+        self.ports.addItems(portList)
+        self.ports.currentIndexChanged.connect(self.update_selected_port_info)
+
+    def update_selected_port_info(self):
+        selected_port = self.ports.currentText()
+        port_info_text = f"<div align='center' style='font-size: 20px;'>Выбран порт: {selected_port}</div>"
+        self.ap.setText(port_info_text)
+
+    def connect_to_port(self):
+        selected_port = self.ports.currentText()
+        serial.setPortName(selected_port)
+        if serial.open(QIODevice.ReadWrite):
+            print("Successfully connected to", selected_port)
+            selected_port = self.ports.currentText()
+            port_info_text = f"<div align='center' style='font-size: 20px;'>Выбран порт: {selected_port}</div>"
+            self.ap.setText(port_info_text) 
+            self.connect_button.setEnabled(False)  
+            self.disconnect_button.setEnabled(True) 
+        else:
+            print("Failed to connect to", selected_port)
+
+    def disconnect_from_port(self):
+        if serial.isOpen():
+            serial.close()
+            self.ap.setText("<div align='center' style='font-size: 20px;'>Порт отключен</div>")
+            self.connect_button.setEnabled(True)  
+            self.disconnect_button.setEnabled(False) 
+            print("Disconnected from port")
+        else:
+            print("Port is already closed")
+    
+    
+        
+
+       
