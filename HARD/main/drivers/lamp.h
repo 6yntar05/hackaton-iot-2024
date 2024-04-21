@@ -7,8 +7,8 @@
 bluepill_neopixel PIX;       // a string of pixels
 #define NUM_PIXELS 4     //   number of pixels in the string
 pixel string[NUM_PIXELS]; //   rgb data buffer
-#define string_port GPIOA //   pin string is connected to
-#define string_pin  0
+#define string_port GPIOB //   pin string is connected to
+#define string_pin  10
 
 namespace lamp {
 
@@ -20,9 +20,9 @@ void initLamp() {
 
 void setLamp(uint8_t R, uint8_t G, uint8_t B) {
     for (uint8_t i=0; i < NUM_PIXELS; i++) {
-        string[i].rgb.r = G;
-        string[i].rgb.g = R;
-        string[i].rgb.b = B;
+        string[i].grb.g = G;
+        string[i].grb.r = R;
+        string[i].grb.b = B;
     } 
     
     PIX.paint( string[0].bytes, NUM_PIXELS, string_port, string_pin );
