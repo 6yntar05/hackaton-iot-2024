@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pins.h"
+#include "networktime.h"
 
 #include <bluepill_ws2812.h>
 bluepill_neopixel PIX;       // a string of pixels

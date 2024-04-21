@@ -53,6 +53,7 @@ void initTime() {
   }
 
   Serial.println("iotGEThttp(time)");
+  while(!Serial.available());
   buf = Serial.readString();
   cmp = "";
   for (int i = 0; i < buf.length(); i++){

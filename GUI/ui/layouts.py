@@ -172,8 +172,21 @@ class SecurityWidget(QWidget):
         self.security()
 
     def onRead(self):
-        while (serial.bytesAvailable()):
-            rx = serial.readLine()
+        buffer = ""
+        while serial.bytesAvailable():
+            buffer += str(serial.read(1))  # Читаем один символ из порта
+            if '\n' not in buffer:  # Если символ новой строки еще не встретился
+                continue  # Продолжаем чтение
+            else:
+                # Команда полностью получена, обрабатываем её
+                command = buffer.strip()  # Удаляем лишние пробелы и символы новой строки
+                print("Received command:", command)
+                # Добавьте здесь код для обработки команды
+                buffer = ""  # Очищаем буфер для чтения следующей команды
+
+            break;
+            print(rx)
+            break
             rxs = str(rx)
 
             lines = rxs.split('\\r\\n')
@@ -209,7 +222,7 @@ class SecurityWidget(QWidget):
                         Session.suspend() # а оно приаттачится обратно?
                     elif key == "b'NOTIFY'":
                         Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
-                    elif key == "b'LOGTIME" | key == "b'UNLOGTIME":
+                    elif key == "b'LOGTIME" or key == "b'UNLOGTIME":
                         self.security_log.appendPlainText(f'LOGTIME:{value}')
                         self.security_log.appendPlainText(f'UNLOGTIME:{value}')
                     
