@@ -114,6 +114,7 @@ void loop() {
       if(digitalRead(BUTTON)) btn_penalty = 50;
       delay(1);
       btn_time++;
+      if(btn_time > 5000) break;
     }
     if(btn_time > 1000) {
       dbS.println("BTN: NEXT");
