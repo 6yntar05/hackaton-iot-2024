@@ -27,7 +27,6 @@ using namespace time;
 void setup() {
   // General
   time::initTime();
-  //Serial.begin(115200);
   SPI.begin();
 
   // Devices
@@ -36,8 +35,10 @@ void setup() {
   RFID::initRFID();
   SDLog::initSd();
 
+  pinMode(BUTTON, INPUT_PULLDOWN);
   // Done!
   tone(BEEP, 2000, 80);
+
 }
 
 bool auth = false;
@@ -55,6 +56,7 @@ static uint32_t utimeNo = 0;
 
 void loop() {
   /// Timers updates...
+
   if (auth) {
     utimeYes++;
     dbS.println("LOGTIME: "+String(utimeYes));
@@ -102,6 +104,24 @@ void loop() {
 
   for (size_t i = 0; i < 1000; i++) {
     analog::getAnalog(&analogs);
+
+    int btn_time = 0;
+    int btn_penalty = 0;
+    if(digitalRead(BUTTON)){
+      btn_penalty = 50;
+    }
+    while(--btn_penalty > 0){
+      if(digitalRead(BUTTON)) btn_penalty = 50;
+      delay(1);
+      btn_time++;
+      if(btn_time > 5000) break;
+    }
+    if(btn_time > 1000) {
+      dbS.println("BTN: NEXT");
+    }else if(btn_time > 0){
+      dbS.println("BTN: PAUSE");
+    }
+    
     delay(1);
   }
 
