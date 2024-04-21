@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pins.h"
+#include "networktime.h"
 
 #include "SPI.h"
 #include "MFRC522.h" 
@@ -14,7 +15,7 @@ inline void initRFID() {
     mfrc522.PCD_Init();
     delay(4);
     mfrc522.PCD_DumpVersionToSerial();
-    Serial.println(F("Scan PICC to see UID, SAK, type, and data blocks..."));
+    time::dbS.println(F("Scan PICC to see UID, SAK, type, and data blocks..."));
 }
 
 inline String getPoint() {
