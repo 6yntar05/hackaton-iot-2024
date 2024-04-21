@@ -24,7 +24,8 @@ Devices:
 
 void setup() {
   // General
-  Serial.begin(115200);
+  time::initTime();
+  //Serial.begin(115200);
   SPI.begin();
 
   // Devices
@@ -32,7 +33,7 @@ void setup() {
   analog::initAnalog();
   RFID::initRFID();
   SDLog::initSd();
-  time::initTime();
+  
 
   // Done!
   tone(BEEP, 2000, 80);
