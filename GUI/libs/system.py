@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication
 import ctypes
 import subprocess
 import re
+import os 
 
 class Media:
     @staticmethod
