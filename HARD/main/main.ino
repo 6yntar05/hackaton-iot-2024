@@ -22,9 +22,12 @@ Devices:
 - Encoders & potentiometers & buttons:
 */
 
+using namespace time;
+
 void setup() {
   // General
-  Serial.begin(115200);
+  time::initTime();
+  //Serial.begin(115200);
   SPI.begin();
 
   // Devices
@@ -32,7 +35,6 @@ void setup() {
   analog::initAnalog();
   RFID::initRFID();
   SDLog::initSd();
-  time::initTime();
 
   // Done!
   tone(BEEP, 2000, 80);
@@ -40,30 +42,52 @@ void setup() {
 
 bool auth = false;
 uint8_t R=150, G=150, B=30;
+analog::analogData analogs;
+
+// timers
+constexpr int notifyTimerReference = 100;
+static int notifyTimer = notifyTimerReference;
+static uint32_t utimeYes = 0;
+
+constexpr int sleepTimerReference = 100;
+static int sleepTimer = sleepTimerReference;
+static uint32_t utimeNo = 0;
 
 void loop() {
-  analog::analogData analogs;
+  /// Timers updates...
+  if (auth) {
+    utimeYes++;
+    dbS.println("LOGTIME: "+String(utimeYes));
+  } else {
+    utimeNo++;
+    dbS.println("UNLOGTIME: "+String(utimeNo));
+  }
 
   /// Devices updates... 
   const String RFIDPoint = RFID::getPoint();
-  time::initTime(); // -> auto
-  if (auth)
-    lamp::setLamp(R,G,B); // <- time
-  else
+  if (auth && (analogs.bright > 100)) {
+    float mul = (float)analogs.bright / 4096.0;
+    lamp::setLamp(R*mul,G*mul,B*mul); // <- time
+  } else {
     lamp::setLamp(0,0,0);
+  }
 
   /// Process
   if (RFIDPoint == "NO") {
     if (auth) { // Change state
-      SDLog::logSd("[00:00:00] RFID: NO | Loging out! ");
       tone(BEEP, 360, 80);
+      SDLog::logSd("["+time::cmp+"] RFID: NO | Loging out! | Session utime: "+String(utimeYes));
+      notifyTimer = notifyTimerReference;
+      utimeYes = 0;
     }
     auth = false;
     digitalWrite(GENERIC_LED, LOW);
   } else {
     if (!auth) { // Change state
-      SDLog::logSd("[00:00:00] RFID: "+RFIDPoint+" | Authenticated! ");
+      SDLog::logSd("["+time::cmp+"] RFID: "+RFIDPoint+" | Authenticated! | Session utime: "+String(utimeNo));
       tone(BEEP, 2000, 80);
+      sleepTimer = sleepTimerReference;
+      utimeNo = 0;
     }
     auth = true;
     digitalWrite(GENERIC_LED, HIGH);
@@ -71,8 +95,8 @@ void loop() {
 
   /// Serial communication <-
   String buffer = {};
-  while (Serial.available() > 0) {
-    buffer += static_cast<char>(Serial.read());
+  while (dbS.available() > 0) {
+    buffer += static_cast<char>(dbS.read());
   }
   proto::parseCommand(buffer);
 
@@ -82,9 +106,23 @@ void loop() {
   }
 
   /// Serial communication ->
-  Serial.println("RFID: "+RFIDPoint);
-  Serial.println("MEDIA: NEXT");
-  Serial.println("BRIGHT: "+String(analogs.bright));
-  Serial.println("TIME: 00:00:00");
-  Serial.println("LAMP: "+String(R)+" "+String(G)+" "+String(B));
+  dbS.println("RFID: "+RFIDPoint);
+  dbS.println("TIME: "+time::cmp);
+  dbS.println("LAMP: "+String(R)+" "+String(G)+" "+String(B));
+  dbS.println("BRIGHT: "+String(analogs.bright/4096.0*100));
+
+  if (auth) {
+    if (notifyTimer < 1) {
+      dbS.println("NOTIFY");
+      notifyTimer = notifyTimerReference;
+    }
+    notifyTimer--;
+  }
+  if (!auth) {
+    if (sleepTimer < 1) {
+      dbS.println("SLEEP");
+      sleepTimer = sleepTimerReference;
+    }
+    sleepTimer--;
+  }
 }

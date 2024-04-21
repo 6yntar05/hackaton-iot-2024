@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pins.h"
+#include "networktime.h"
 
 #include <string.h>
 #include <SPI.h>
@@ -10,12 +11,12 @@ namespace SDLog {
 
 void initSd() {
     pinMode(SD_CS, OUTPUT);
-    Serial.print("Initializing SD card...");
+    time::dbS.print("Initializing SD card...");
     while (!SD.begin(SD_CS))
     {
         delay(10);
     }
-    Serial.println("initialization done.");
+    time::dbS.println("initialization done.");
 }
 
 void logSd(const String& text) {
@@ -26,7 +27,7 @@ void logSd(const String& text) {
         myFile.close();
     } else {
         // if the file didn't open, print an error:
-        Serial.println("error opening test.txt");
+        time::dbS.println("error opening test.txt");
     }
 }
 
