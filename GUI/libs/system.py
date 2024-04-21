@@ -1,8 +1,4 @@
-import sys
-from PyQt5.QtWidgets import QApplication
-import ctypes
-import subprocess
-import re
+from datetime import timedelta
 import os 
 import psutil
 

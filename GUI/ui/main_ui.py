@@ -69,6 +69,8 @@ class MainWindow(QWidget):
         self.security_widget = SecurityWidget()
         self.stacked_widget.addWidget(self.security_widget)
 
+        
+
         self.settings_widget = SettingsWidget()
         self.stacked_widget.addWidget(self.settings_widget)
 

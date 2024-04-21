@@ -1,10 +1,8 @@
-import os
+
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton, QCheckBox, QProgressBar
-import datetime
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
-from PyQt5.QtCore import QIODevice
+from PyQt5.QtCore import QIODevice, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
-import sys
 
 from libs.system import Media, Session, Notify
 
@@ -21,11 +19,11 @@ for port in ports:
     portList.append(port.portName())
 print(portList)
 
-R = 120;
-G = 120;
-B = 50;
+R = 120
+G = 120
+B = 50
 
-Bright = 100;
+Bright = 100
 
 def RGB_to_CCT(R, G, B):
     # Конвертация значений RGB в диапазоне [0, 255] в диапазон [0, 1]
@@ -62,8 +60,8 @@ class EnvironmentWidget(QWidget):
         self.lbl_color_temp = QLabel()
         layout.addWidget(self.lbl_color_temp)
 
-        self.lbl_level = QLabel()
-        layout.addWidget(self.lbl_level)
+        self.security_widget = SecurityWidget()
+        self.security_widget.brightnessChanged.connect(self.updateBrightness)
 
         lamp_layout = QHBoxLayout()  # Создаем горизонтальный лейаут для лампы и яркости
         self.icon_label = QLabel()
@@ -97,15 +95,13 @@ class EnvironmentWidget(QWidget):
     def time_and_temp(self):
         current_time = "00:00:00"
         color_temperature = str(RGB_to_CCT(R,G,B))+"K"
-        lamp_procent = "40%"
 
         time_text = f"<div align='left' style='font-size: 16px;'>Время сессии: {current_time}</div>"
         temp_text = f"<div align='left' style='font-size: 16px;'>Цветовая температура: {color_temperature}</div>"
-        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {lamp_procent}</div>"
+        
 
         self.lbl_time.setText(time_text)
         self.lbl_color_temp.setText(temp_text)
-        self.lbl_lamp.setText(lamp_text)
 
         #print(Media.getTrack())
         #(status, title, artist, progress, duration) = Media.getTrack()
@@ -122,8 +118,33 @@ class EnvironmentWidget(QWidget):
         icon_pixmap = QPixmap("res/lamp.png")
         self.icon_label.setPixmap(icon_pixmap)
 
+    def updateBrightness(self, brightness):
+        lamp_procent = f"{brightness}%"
+        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {lamp_procent}</div>"
+        self.lbl_lamp.setText(lamp_text)
+    
 
+    #Протестировать 
+    """
+    def update_session_time(self):
+        session_time_seconds = Session.getSessionTime()
+        session_time_text = self.format_time(session_time_seconds)
+        self.lbl_time.setText(f"<div align='left' style='font-size: 16px;'>Время сессии: {session_time_text}</div>")
+        QTimer.singleShot(1000, self.update_session_time) 
+
+    def format_time(self, seconds):
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        return f"{hours:02}:{minutes:02}:{seconds:02}"
+    """
 class SecurityWidget(QWidget):
+    #Яркость
+    brightnessChanged  = pyqtSignal(float)
+
+    #Время 
+    timeChange = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -133,6 +154,12 @@ class SecurityWidget(QWidget):
         
         self.security_indef = QLabel()
         layout.addWidget(self.security_indef)
+
+        self.security_media_button = QLabel()
+        layout.addWidget(self.security_media_button)
+
+        self.security_media_sound = QLabel()
+        layout.addWidget(self.security_media_sound)
         
         self.security_log_text = QLabel("Журнал")
         layout.addWidget(self.security_log_text)
@@ -162,22 +189,30 @@ class SecurityWidget(QWidget):
                         self.security_indef.setText(indef_text)
                     elif key == "b'MEDIA":
                         self.security_log.appendPlainText(f"MEDIA:{value}")
+                        media_button_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Медиа: {value}</div>"
+                        self.security_media_button.setText(media_button_text)
                     elif key == "b'VOLUME":
                         self.security_log.appendPlainText(f"VOLUME:{value}")
+                        media_sound_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Громкость: {value}</div>"
+                        self.security_media_sound.setText(media_sound_text)
                     elif key == "b'BRIGHT":
                         self.security_log.appendPlainText(f"BRIGHT:{value}")
-                        Bright = 100
+                        self.brightnessChanged.emit(value)
                     elif key == "b'TIME":
                         self.security_log.appendPlainText(f"TIME:{value}")
                     elif key == "b'LAMP":
                         self.security_log.appendPlainText(f"LAMP:{value}")
-                        R = 120;
-                        G = 120;
-                        B = 50;
+                        R = 120
+                        G = 120
+                        B = 50
                     elif key == "b'SLEEP'":
                         Session.suspend() # а оно приаттачится обратно?
-                    elif key == "b'GETUP'":
+                    elif key == "b'NOTIFY'":
                         Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
+                    elif key == "b'LOGTIME" | key == "b'UNLOGTIME":
+                        self.security_log.appendPlainText(f'LOGTIME:{value}')
+                        self.security_log.appendPlainText(f'UNLOGTIME:{value}')
+                    
 
     def security(self):
         self.security_log_text.setText("Журнал")
