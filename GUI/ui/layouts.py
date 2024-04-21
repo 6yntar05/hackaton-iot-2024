@@ -171,60 +171,53 @@ class SecurityWidget(QWidget):
 
         self.security()
 
+    buffer = ""
     def onRead(self):
-        buffer = ""
         while serial.bytesAvailable():
-            buffer += str(serial.read(1))  # Читаем один символ из порта
-            if '\n' not in buffer:  # Если символ новой строки еще не встретился
-                continue  # Продолжаем чтение
+            tmpBuffer = ""
+            rx = serial.read(1)
+            self.buffer += rx.decode('utf-8')
+            if '\n' not in self.buffer:
+                continue
             else:
-                # Команда полностью получена, обрабатываем её
-                command = buffer.strip()  # Удаляем лишние пробелы и символы новой строки
+                command = self.buffer.strip()
                 print("Received command:", command)
-                # Добавьте здесь код для обработки команды
-                buffer = ""  # Очищаем буфер для чтения следующей команды
+                tmpBuffer = self.buffer
+                self.buffer = ""
 
-            break;
-            print(rx)
-            break
-            rxs = str(rx)
-
-            lines = rxs.split('\\r\\n')
-            for line in lines:
-                parts = line.split(':')
-                if len(parts) == 2:
-                    key = parts[0].strip() 
-                    value = parts[1].strip()  
-                    print(f'{key}: {value}')
-                    if key == "b'RFID":
-                        self.security_log.appendPlainText(f"RFID:{value}")
-                        indef_text = f"<div align='center' style='font-size: 20px; color: #20FF20'>Идентификатор: {value}</div>" 
-                        self.security_indef.setText(indef_text)
-                    elif key == "b'MEDIA":
-                        self.security_log.appendPlainText(f"MEDIA:{value}")
-                        media_button_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Медиа: {value}</div>"
-                        self.security_media_button.setText(media_button_text)
-                    elif key == "b'VOLUME":
-                        self.security_log.appendPlainText(f"VOLUME:{value}")
-                        media_sound_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Громкость: {value}</div>"
-                        self.security_media_sound.setText(media_sound_text)
-                    elif key == "b'BRIGHT":
-                        self.security_log.appendPlainText(f"BRIGHT:{value}")
-                        self.brightnessChanged.emit(value)
-                    elif key == "b'TIME":
-                        self.security_log.appendPlainText(f"TIME:{value}")
-                    elif key == "b'LAMP":
-                        self.security_log.appendPlainText(f"LAMP:{value}")
-                        R = 120
-                        G = 120
-                        B = 50
-                    elif key == "b'SLEEP'":
-                        Session.suspend() # а оно приаттачится обратно?
-                    elif key == "b'NOTIFY'":
-                        Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
-                    elif key == "b'LOGTIME" or key == "b'UNLOGTIME":
-                        self.security_log.appendPlainText(f'LOGTIME:{value}')
-                        self.security_log.appendPlainText(f'UNLOGTIME:{value}')
+            parts = tmpBuffer.split(':')
+            print(parts)
+            key = parts[0].strip() 
+            if key == "RFID":
+                value = parts[1].strip().replace("\\r\\n", "\n")
+                self.security_log.appendPlainText(f"RFID:{value}")
+                indef_text = f"<div align='center' style='font-size: 20px; color: #20FF20'>Идентификатор: {value}</div>" 
+                self.security_indef.setText(indef_text)
+            elif key == "b'MEDIA":
+                self.security_log.appendPlainText(f"MEDIA:{value}")
+                media_button_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Медиа: {value}</div>"
+                self.security_media_button.setText(media_button_text)
+            elif key == "b'VOLUME":
+                self.security_log.appendPlainText(f"VOLUME:{value}")
+                media_sound_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Громкость: {value}</div>"
+                self.security_media_sound.setText(media_sound_text)
+            elif key == "b'BRIGHT":
+                self.security_log.appendPlainText(f"BRIGHT:{value}")
+                self.brightnessChanged.emit(value)
+            elif key == "b'TIME":
+                self.security_log.appendPlainText(f"TIME:{value}")
+            elif key == "b'LAMP":
+                self.security_log.appendPlainText(f"LAMP:{value}")
+                R = 120
+                G = 120
+                B = 50
+            elif key == "b'SLEEP'":
+                Session.suspend() # а оно приаттачится обратно?
+            elif key == "b'NOTIFY'":
+                Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
+            elif key == "b'LOGTIME" or key == "b'UNLOGTIME":
+                self.security_log.appendPlainText(f'LOGTIME:{value}')
+                self.security_log.appendPlainText(f'UNLOGTIME:{value}')
                     
 
     def security(self):
