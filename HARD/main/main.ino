@@ -117,9 +117,9 @@ void loop() {
       if(btn_time > 5000) break;
     }
     if(btn_time > 1000) {
-      dbS.println("BTN: NEXT");
+      dbS.println("MEDIA: NEXT");
     }else if(btn_time > 0){
-      dbS.println("BTN: PAUSE");
+      dbS.println("MEDIA: PAUSE");
     }
     
     delay(1);

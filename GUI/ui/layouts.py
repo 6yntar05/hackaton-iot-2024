@@ -25,6 +25,8 @@ B = 50
 
 Bright = 100
 
+LOGTIME = 0
+
 def RGB_to_CCT(R, G, B):
     # Конвертация значений RGB в диапазоне [0, 255] в диапазон [0, 1]
     R /= 255
@@ -60,8 +62,8 @@ class EnvironmentWidget(QWidget):
         self.lbl_color_temp = QLabel()
         layout.addWidget(self.lbl_color_temp)
 
-        self.security_widget = SecurityWidget()
-        self.security_widget.brightnessChanged.connect(self.updateBrightness)
+        self.lbl_level = QLabel()
+        layout.addWidget(self.lbl_level)
 
         lamp_layout = QHBoxLayout()  # Создаем горизонтальный лейаут для лампы и яркости
         self.icon_label = QLabel()
@@ -93,15 +95,17 @@ class EnvironmentWidget(QWidget):
         self.setLayout(layout)
         
     def time_and_temp(self):
-        current_time = "00:00:00"
+        current_time = "00:"+str(LOGTIME)
         color_temperature = str(RGB_to_CCT(R,G,B))+"K"
+        lamp_procent = str(Bright)+"%"
 
         time_text = f"<div align='left' style='font-size: 16px;'>Время сессии: {current_time}</div>"
         temp_text = f"<div align='left' style='font-size: 16px;'>Цветовая температура: {color_temperature}</div>"
-        
+        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {lamp_procent}</div>"
 
         self.lbl_time.setText(time_text)
         self.lbl_color_temp.setText(temp_text)
+        self.lbl_lamp.setText(lamp_text)
 
         #print(Media.getTrack())
         #(status, title, artist, progress, duration) = Media.getTrack()
@@ -119,8 +123,7 @@ class EnvironmentWidget(QWidget):
         self.icon_label.setPixmap(icon_pixmap)
 
     def updateBrightness(self, brightness):
-        lamp_procent = f"{brightness}%"
-        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {lamp_procent}</div>"
+        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {Bright}</div>"
         self.lbl_lamp.setText(lamp_text)
     
 
@@ -154,12 +157,6 @@ class SecurityWidget(QWidget):
         
         self.security_indef = QLabel()
         layout.addWidget(self.security_indef)
-
-        self.security_media_button = QLabel()
-        layout.addWidget(self.security_media_button)
-
-        self.security_media_sound = QLabel()
-        layout.addWidget(self.security_media_sound)
         
         self.security_log_text = QLabel("Журнал")
         layout.addWidget(self.security_log_text)
@@ -173,6 +170,7 @@ class SecurityWidget(QWidget):
 
     buffer = ""
     def onRead(self):
+        print("OnRead")
         while serial.bytesAvailable():
             tmpBuffer = ""
             rx = serial.read(1)
@@ -193,30 +191,64 @@ class SecurityWidget(QWidget):
                 self.security_log.appendPlainText(f"RFID:{value}")
                 indef_text = f"<div align='center' style='font-size: 20px; color: #20FF20'>Идентификатор: {value}</div>" 
                 self.security_indef.setText(indef_text)
-            elif key == "b'MEDIA":
+                if ("NO" in value):
+                    Session.lockOS()
+                else:
+                    Session.unlockOS()
+
+            elif key == "MEDIA":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f"MEDIA:{value}")
-                media_button_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Медиа: {value}</div>"
-                self.security_media_button.setText(media_button_text)
-            elif key == "b'VOLUME":
+                if ("TOGGLE" in parts[1].strip() or "PAUSE" in parts[1].strip()):
+                    print("TOGGLE!!!")
+                    Media.toggleMusic()
+                elif ("NEXT" in parts[1].strip()):
+                    print("NEXT!!!")
+                    Media.nextMusic()
+
+            elif key == "VOLUME":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f"VOLUME:{value}")
-                media_sound_text = f"<div align='center' style='font-size: 20px; color: #7FFFD4'>Громкость: {value}</div>"
-                self.security_media_sound.setText(media_sound_text)
-            elif key == "b'BRIGHT":
+                print(value)
+                Media.changeVolume(value)
+
+            elif key == "BRIGHT":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f"BRIGHT:{value}")
-                self.brightnessChanged.emit(value)
-            elif key == "b'TIME":
+                self.brightnessChanged.emit(int(float(value)))
+                print("Bright:", int(float(value)))
+                Bright = int(float(value))
+                
+            elif key == "TIME":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f"TIME:{value}")
-            elif key == "b'LAMP":
+                # TODO
+
+            elif key == "LAMP":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f"LAMP:{value}")
-                R = 120
-                G = 120
-                B = 50
-            elif key == "b'SLEEP'":
-                Session.suspend() # а оно приаттачится обратно?
-            elif key == "b'NOTIFY'":
+                RGB = value.split(" ")
+                print(RGB)
+                # TODO
+                R = int(RGB[0])
+                G = int(RGB[1])
+                B = int(RGB[2])
+
+            elif key == "SLEEP":
+                self.security_log.appendPlainText(f'SLEEP')
+                Session.suspend()
+
+            elif key == "NOTIFY":
+                self.security_log.appendPlainText(f'NOTIFY')
                 Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
-            elif key == "b'LOGTIME" or key == "b'UNLOGTIME":
+
+            elif key == "LOGTIME":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f'LOGTIME:{value}')
+                LOGTIME = int(value)
+
+            elif key == "UNLOGTIME":
+                value = parts[1].strip().replace("\\r\\n", "\n")
                 self.security_log.appendPlainText(f'UNLOGTIME:{value}')
                     
 
