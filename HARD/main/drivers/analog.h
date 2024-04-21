@@ -72,9 +72,9 @@ void getAnalog(analogData* ret) {
     n = digitalRead(ENC_A);
     if ((encoder0PinALast == LOW) && (n == HIGH)) {
         if (digitalRead(ENC_C) == LOW) {
-        encoder0Pos--;
+        encoder0Pos-=2;
         } else {
-        encoder0Pos++;
+        encoder0Pos+=2;
         }
         time::dbS.println("VOLUME: "+String(encoder0Pos));
     }
