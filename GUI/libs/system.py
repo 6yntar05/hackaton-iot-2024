@@ -4,6 +4,7 @@ import ctypes
 import subprocess
 import re
 import os 
+import psutil
 
 class Media:
     @staticmethod
@@ -25,38 +26,25 @@ class Media:
     def prevMusic():
         # Воспроизведение предыдущего трека с помощью playerctl
         os.system("playerctl previous")
-    
+
+class Notify:
     @staticmethod
-    def getTrack():
-        try:
-            # Выполнение команды "playerctl metadata" и получение вывода
-            result = subprocess.run(["playerctl", "metadata", "--format", "'{{status}} {{title}} by {{artist}}'"], capture_output=True, text=True, shell=True)
-            output = result.stdout
-
-            # Парсинг вывода с помощью регулярных выражений
-            match = re.match(r"'(.*?) (.*?) by (.*?)'", output)
-            if match:
-                status = match.group(1)
-                title = match.group(2)
-                artist = match.group(3)
-
-                return status, title, artist
-            else:
-                return None
-        except Exception as e:
-            print(f"Error getting track: {e}")
-            return None
+    def Send(summary, text):
+        os.system("notify-send -i '{}' '{}'".format(summary, text))
 
 class Session:
+    @staticmethod
     def lockOS():
         os.system("swaylock")
 
+    @staticmethod
     def unlockOS():
         os.system("pkill --signal SIGUSR1 swaylock")
     
+    @staticmethod
     def suspend():
         os.system("systemctl suspend")
-    
+        
     @staticmethod
     def setAutostart():
         # Создание файла .desktop для автозапуска программы
@@ -84,3 +72,32 @@ class Session:
             print("Autostart disabled")
         else:
             print("Autostart was not set")
+    
+    @staticmethod
+    def getSessionTime():
+        pid = os.getpid()  # Получаем PID текущего процесса
+        stat_path = f"/proc/{pid}/stat"
+
+        with open(stat_path, 'r') as stat_file:
+            stat_info = stat_file.read().split()
+
+        # Время активности процесса в тактах ядра
+        utime = int(stat_info[13])  # utime - user mode time
+
+        # Количество тактов в секунде
+        ticks_per_second = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
+
+        # Переводим время активности процесса из тактов в секунды
+        session_time_seconds = utime / ticks_per_second
+
+        return session_time_seconds
+    
+    @staticmethod
+    def getSystemUptime():
+        try:
+            uptime_seconds = psutil.boot_time()
+            uptime_formatted = timedelta(seconds=uptime_seconds)
+            return str(uptime_formatted)
+        except Exception as e:
+            print(f"Error getting system uptime: {e}")
+            return None

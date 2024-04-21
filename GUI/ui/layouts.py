@@ -1,9 +1,12 @@
 import os
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton, QCheckBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QComboBox , QPushButton, QCheckBox, QProgressBar
 import datetime
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtCore import QIODevice
+from PyQt5.QtGui import QPixmap
 import sys
+
+from libs.system import Media, Session, Notify
 
 
 serial = QSerialPort()
@@ -18,7 +21,32 @@ for port in ports:
     portList.append(port.portName())
 print(portList)
 
+R = 120;
+G = 120;
+B = 50;
 
+Bright = 100;
+
+def RGB_to_CCT(R, G, B):
+    # Конвертация значений RGB в диапазоне [0, 255] в диапазон [0, 1]
+    R /= 255
+    G /= 255
+    B /= 255
+
+    # Перевод значений RGB в XYZ
+    X = 0.4124564 * R + 0.3575761 * G + 0.1804375 * B
+    Y = 0.2126729 * R + 0.7151522 * G + 0.0721750 * B
+    Z = 0.0193339 * R + 0.1191920 * G + 0.9503041 * B
+
+    # Вычисление координат Цветовой температуры (Chromaticity Coordinates)
+    x = X / (X + Y + Z)
+    y = Y / (X + Y + Z)
+
+    # Вычисление цветовой температуры по координатам
+    n = (x - 0.3320) / (0.1858 - y)
+    CCT = 449 * n**3 + 3525 * n**2 + 6823.3 * n + 5520.33
+
+    return int(round(CCT, -2))
 
 class EnvironmentWidget(QWidget):
     def __init__(self):
@@ -30,37 +58,69 @@ class EnvironmentWidget(QWidget):
 
         self.lbl_time = QLabel()
         layout.addWidget(self.lbl_time)
-        
-        self.lbl_level = QLabel()
-        layout.addWidget(self.lbl_level)
 
         self.lbl_color_temp = QLabel()
         layout.addWidget(self.lbl_color_temp)
 
-        self.lbl_lamp = QLabel()
-        layout.addWidget(self.lbl_lamp)
-        
+        self.lbl_level = QLabel()
+        layout.addWidget(self.lbl_level)
+
+        lamp_layout = QHBoxLayout()  # Создаем горизонтальный лейаут для лампы и яркости
+        self.icon_label = QLabel()
+        lamp_layout.addWidget(self.icon_label)
+
+        self.lbl_lamp = QLabel()  # Создаем отдельный QLabel для отображения яркости
+        lamp_layout.addWidget(self.lbl_lamp)
+
+        layout.addLayout(lamp_layout)  # Добавляем горизонтальный лейаут в вертикальный
+
+        self.mediabar = QLabel()
+        layout.addWidget(self.mediabar)
+        self.progress_bar = QProgressBar()  # Создаем QProgressBar
+        self.progress_bar.setStyleSheet("""
+    QProgressBar {
+        border: none;
+        text-align: center;
+        min-width: 10px; /* Минимальная ширина прогрессбара */
+    }
+    QProgressBar::chunk {
+        background-color: #4CAF50; /* Цвет прогресса */
+        width: 1px; /* Ширина прогресса */
+    }
+""")
+        layout.addWidget(self.progress_bar)  # Добавляем его в вертикальный лейаут
+
         self.time_and_temp()
 
         self.setLayout(layout)
         
     def time_and_temp(self):
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        level = "Уровень света: 5%"
-        color_temperature = "5000K"  #TODO: добавить логику для получения реальной цветовой температуры
+        current_time = "00:00:00"
+        color_temperature = str(RGB_to_CCT(R,G,B))+"K"
         lamp_procent = "40%"
-        
 
-        time_text = f"<div align='center' style='font-size: 20px;'>Текущее время: {current_time}</div>"
-        level_text = f"<div align='center' style='font-size: 20px;'>{level}</div>"
-        temp_text = f"<div align='center' style='font-size: 20px;'>Цветовая температура: {color_temperature}</div>"
-        lamp_text = f"<div align='center' style='font-size: 20px;'>Процент горения лампы: {lamp_procent}</div>"
+        time_text = f"<div align='left' style='font-size: 16px;'>Время сессии: {current_time}</div>"
+        temp_text = f"<div align='left' style='font-size: 16px;'>Цветовая температура: {color_temperature}</div>"
+        lamp_text = f"<div align='left' style='font-size: 16px;'>Яркость: {lamp_procent}</div>"
 
         self.lbl_time.setText(time_text)
-        self.lbl_level.setText(level_text)
         self.lbl_color_temp.setText(temp_text)
         self.lbl_lamp.setText(lamp_text)
-    
+
+        #print(Media.getTrack())
+        #(status, title, artist, progress, duration) = Media.getTrack()
+        if (True):
+            mediabar_text = f"<div align='center' style='font-size: 16px;'> Ничего не воспроизводится </div>"
+            self.mediabar.setText(mediabar_text)
+            self.progress_bar.setVisible(False)
+        else:
+            mediabar_text = f"<div align='center' style='font-size: 16px;'> Известен - С названием </div>"
+            self.mediabar.setText(mediabar_text)
+            self.progress_bar.setVisible(True)
+            self.progress_bar.setValue(50)
+
+        icon_pixmap = QPixmap("res/lamp.png")
+        self.icon_label.setPixmap(icon_pixmap)
 
 
 class SecurityWidget(QWidget):
@@ -74,7 +134,7 @@ class SecurityWidget(QWidget):
         self.security_indef = QLabel()
         layout.addWidget(self.security_indef)
         
-        self.security_log_text = QLabel("Логи")
+        self.security_log_text = QLabel("Журнал")
         layout.addWidget(self.security_log_text)
         
         self.security_log = QPlainTextEdit()
@@ -98,7 +158,7 @@ class SecurityWidget(QWidget):
                     print(f'{key}: {value}')
                     if key == "b'RFID":
                         self.security_log.appendPlainText(f"RFID:{value}")
-                        indef_text = f"<div align='center' style='font-size: 20px;'>Индефитикатор: {value}</div>" 
+                        indef_text = f"<div align='center' style='font-size: 20px; color: #20FF20'>Идентификатор: {value}</div>" 
                         self.security_indef.setText(indef_text)
                     elif key == "b'MEDIA":
                         self.security_log.appendPlainText(f"MEDIA:{value}")
@@ -106,17 +166,23 @@ class SecurityWidget(QWidget):
                         self.security_log.appendPlainText(f"VOLUME:{value}")
                     elif key == "b'BRIGHT":
                         self.security_log.appendPlainText(f"BRIGHT:{value}")
+                        Bright = 100
                     elif key == "b'TIME":
                         self.security_log.appendPlainText(f"TIME:{value}")
                     elif key == "b'LAMP":
                         self.security_log.appendPlainText(f"LAMP:{value}")
+                        R = 120;
+                        G = 120;
+                        B = 50;
+                    elif key == "b'SLEEP'":
+                        Session.suspend() # а оно приаттачится обратно?
+                    elif key == "b'GETUP'":
+                        Notify.Send("Время перерыва", "Ваша сессия длится более 4 часов")
 
     def security(self):
-        self.security_log_text.setText("Логи")
+        self.security_log_text.setText("Журнал")
         self.security_log.setReadOnly(True)
         serial.readyRead.connect(self.onRead)  
-
-
 
 class SettingsWidget(QWidget):
     def __init__(self):
@@ -137,7 +203,6 @@ class SettingsWidget(QWidget):
         self.disconnect_button.clicked.connect(self.disconnect_from_port)
         self.disconnect_button.setEnabled(False) 
         layout.addWidget(self.disconnect_button)
-
 
         self.ap = QLabel()
         layout.addWidget(self.ap)
@@ -160,10 +225,11 @@ class SettingsWidget(QWidget):
     
     def copy_to_run(self):
         if self.autorun.isChecked():
-            file_path = sys.argv[0]
-            file_name = file_path.split('\\')[-1]
-            path = '%userprofile%\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\'
-            os.system(f'copy "{file_path}" "{path}{file_name}"')   
+            pass
+            #file_path = sys.argv[0]
+            #file_name = file_path.split('\\')[-1]
+            #path = '%userprofile%\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\'
+            #os.system(f'copy "{file_path}" "{path}{file_name}"')   
 
     def connect_to_port(self):
         selected_port = self.ports.currentText()

@@ -5,12 +5,12 @@ from ui.main_ui import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyleSheet(open("theme.qss").read())
     w = QWidget()
     w.setFixedSize(500,300)
-    w.setWindowTitle("Aarch : WorkSE")
+    w.setWindowTitle("Aarch: WorkSE App")
     
-    main_layout = QVBoxLayout(w)  
-    
+    main_layout = QVBoxLayout(w)
    
     MainUI = MainWindow()
     main_layout.addWidget(MainUI)

@@ -1,0 +1,71 @@
+/* Основной фон и цвет текста */
+QWidget {
+    background-color: white;
+    color: black;
+}
+
+/* Фон для кнопок */
+QPushButton {
+    background-color: white;
+    border: 1px solid #CCCCCC;
+    padding: 5px;
+}
+
+/* Фон для активных кнопок */
+QPushButton:hover {
+    background-color: #F0F0F0;
+}
+
+/* Фон для нажатых кнопок */
+QPushButton:pressed {
+    background-color: #E0E0E0;
+}
+
+/* Фон для выделенных элементов */
+QListView::item:selected {
+    background-color: #F0F0F0;
+}
+
+/* Фон для активных текстовых полей */
+QLineEdit:focus {
+    background-color: #F0F0F0;
+}
+
+/* Фон для активных списков */
+QComboBox::drop-down {
+    background-color: #F0F0F0;
+}
+
+/* Фон для меню */
+QMenu {
+    background-color: white;
+    border: 1px solid #CCCCCC;
+}
+
+/* Фон для активных элементов меню */
+QMenu::item:selected {
+    background-color: #F0F0F0;
+}
+
+/* Фон для полос прокрутки */
+QScrollBar:vertical {
+    background-color: #F0F0F0;
+}
+
+/* Фон для ползунка прокрутки */
+QScrollBar::handle:vertical {
+    background-color: #CCCCCC;
+}
+
+/* Фон для кнопки выпадающего меню */
+QComboBox::drop-down {
+    background-color: white; /* Установите желаемый цвет фона */
+    border: 1px solid #CCCCCC; /* Установите желаемый стиль границы */
+    padding: 5px; /* Установите отступы по вашему усмотрению */
+    image: url('/path/to/your/icon.png'); /* Установите путь к вашей иконке */
+}
+
+/* Фон для флажков */
+QCheckBox::indicator {
+    background-color: white;
+    border: 1px solid #CCCCCC
