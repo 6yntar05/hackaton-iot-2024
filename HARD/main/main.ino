@@ -125,10 +125,12 @@ void loop() {
     delay(1);
   }
 
+  refreshTime();
+  
   /// Serial communication ->
   dbS.println("RFID: "+RFIDPoint);
-  dbS.println("TIME: "+time::cmp);
-  dbS.println("LAMP: "+String(R)+" "+String(G)+" "+String(B));
+  dbS.println("TIME: "+cmp);
+  //dbS.println("LAMP: "+String(R)+" "+String(G)+" "+String(B));
   dbS.println("BRIGHT: "+String(analogs.bright/4096.0*100));
 
   if (auth) {

@@ -4,11 +4,20 @@
 #include <USBComposite.h>
 #include <strings.h>
 
+#define MMOD 60
+#define HMOD 60*60
+#define DMOD 24*60*60
+#define seconds() (millis()/1000)
 
 namespace time {
 
 String buf;
 String cmp;
+int hours;
+int minutes;
+int seconds;
+int boottime;
+long stime, otime;
 USBCompositeSerial dbS;
 
 void initTime() {
@@ -51,15 +60,29 @@ void initTime() {
     dbS.println("Set Server command failed to execute :(");
     return;
   }
-
-  Serial.println("iotGEThttp(time)");
-  while(!Serial.available());
-  buf = Serial.readString();
   cmp = "";
-  for (int i = 0; i < buf.length(); i++){
-    if(buf[i] >= 48 && buf[i] <= 58) cmp.concat(buf[i]);
+  while(cmp.length() < 1){
+    Serial.println("iotGEThttp(time)");
+    while(!Serial.available());
+    buf = Serial.readString();
+    cmp = "";
+    for (int i = 0; i < buf.length(); i++){
+      if(buf[i] >= 48 && buf[i] <= 58) cmp.concat(buf[i]);
+    }
   }
-  dbS.println(cmp);
+  cmp = cmp.substring(1,cmp.length());
+  buf = cmp.substring(0,2);
+  cmp = cmp.substring(3,5);
+  hours = buf.toInt();
+  minutes = cmp.toInt();
+  boottime=seconds();
+  otime = HMOD*hours+MMOD*minutes+seconds();
+  dbS.println(hours);
+  dbS.println(minutes);
+  dbS.println(otime);
 }
-
+void refreshTime(){
+  otime = HMOD*hours+MMOD*minutes+seconds();
+  cmp=String(otime);
+}
 }
